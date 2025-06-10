@@ -1,5 +1,5 @@
 const express = require('express')
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors')
 require('dotenv').config()
 
@@ -7,7 +7,7 @@ const app = express()
 const port = process.env.PORT || 3000
 
 app.use(cors())
-app.use(express.json())
+app.use(express.json());
 
 
 
@@ -27,7 +27,63 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
+    const assignmentsCollection = client.db("StudyMate").collection("assignments")
+    const submittedAssignmentsCollection = client.db("StudyMate").collection("submittedAssignments")
 
+
+    app.get('/assignments', async (req, res) => {
+      const allAssignments = await assignmentsCollection.find().toArray()
+      res.send(allAssignments)
+    })
+
+    app.get('/assignments/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await assignmentsCollection.findOne(query)
+      res.send(result)
+    })
+    
+    app.delete('/assignments/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const result = await assignmentsCollection.deleteOne(query)
+      res.send(result)
+    })
+
+    app.patch('/assignments/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const assignmentInfo = req.body;
+
+      console.log(assignmentInfo.dueDate)
+
+      const updatedAssignment = {
+        $set: {
+          title: assignmentInfo.title,
+          marks: assignmentInfo.marks,
+          level: assignmentInfo.level,
+          dueDate: assignmentInfo.dueDate,
+          description: assignmentInfo.description
+        }
+      }
+      console.log(updatedAssignment)
+      const result = await assignmentsCollection.updateOne(query, updatedAssignment)
+      res.send(result)
+    })
+
+    app.post('/assignments', async (req, res) => {
+      const newAssignments = req.body;
+      const result = await assignmentsCollection.insertOne(newAssignments);
+      res.send(result)
+    })
+
+
+    // submitted Assignment details
+    app.post('/submitted-assignments', async (req, res) => {
+      const assignmentInfo = req.body
+      const result = await submittedAssignmentsCollection.insertOne(assignmentInfo)
+      res.send(result)
+    })
 
 
 
