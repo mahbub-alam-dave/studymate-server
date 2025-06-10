@@ -85,6 +85,40 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/my-submitted-assignments', async (req, res) => {
+      const email = req.query.email;
+      const query = {email: email}
+      const result = await submittedAssignmentsCollection.find(query).toArray()
+      // console.log(result)
+      
+      for(const assignment of result) {
+        const assignmentQuery = {_id: new ObjectId(assignment.assignmentId)}
+        const searchedAssignment = await assignmentsCollection.findOne(assignmentQuery)
+        assignment.title = searchedAssignment.title;
+        assignment.marks = searchedAssignment.marks;
+        assignment.status = searchedAssignment.status;
+        // console.log(searchedAssignment)
+      }
+      res.send(result)
+    })
+
+    app.get('/pending-assignments', async(req, res) => {
+      const query = {status: "pending"}
+      const result = await submittedAssignmentsCollection.find(query).toArray()
+      console.log(result)
+      
+      for(const assignment of result) {
+        const assignmentQuery = {_id: new ObjectId(assignment.assignmentId)}
+        const searchedAssignment = await assignmentsCollection.findOne(assignmentQuery)
+        assignment.title = searchedAssignment.title;
+        assignment.marks = searchedAssignment.marks;
+        assignment.status = searchedAssignment.status;
+        // console.log(searchedAssignment)
+      }
+      res.send(result)
+
+    })
+
 
 
 
