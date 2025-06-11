@@ -55,7 +55,7 @@ async function run() {
       const query = {_id: new ObjectId(id)}
       const assignmentInfo = req.body;
 
-      console.log(assignmentInfo.dueDate)
+      // console.log(assignmentInfo.dueDate)
 
       const updatedAssignment = {
         $set: {
@@ -96,16 +96,17 @@ async function run() {
         const searchedAssignment = await assignmentsCollection.findOne(assignmentQuery)
         assignment.title = searchedAssignment.title;
         assignment.marks = searchedAssignment.marks;
-        assignment.status = searchedAssignment.status;
+        // assignment.status = searchedAssignment.status;
         // console.log(searchedAssignment)
       }
       res.send(result)
     })
 
+
     app.get('/pending-assignments', async(req, res) => {
       const query = {status: "pending"}
       const result = await submittedAssignmentsCollection.find(query).toArray()
-      console.log(result)
+      // console.log(result)
       
       for(const assignment of result) {
         const assignmentQuery = {_id: new ObjectId(assignment.assignmentId)}
@@ -120,6 +121,23 @@ async function run() {
     })
 
 
+    app.patch('/my-submitted-assignments/:id', async (req, res) => {
+      const id = req.params.id;
+      console.log(id)
+      const evaluatedInfo = req.body;
+      const query = {_id: new ObjectId(id)}
+      // console.log(query)
+      const updateSubmit = {
+        $set:{
+          status: evaluatedInfo.status,
+          obtainedMarks: evaluatedInfo.marks,
+          examinerFeedback: evaluatedInfo.feedback
+        }
+      }
+      const result = await submittedAssignmentsCollection.updateOne(query, updateSubmit)
+      res.send(result)
+
+    })
 
 
 
