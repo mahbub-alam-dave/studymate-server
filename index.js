@@ -11,21 +11,29 @@ app.use(express.json());
 
 
 var admin = require("firebase-admin");
-var serviceAccount = require("fir-advance-project-sdk.json");
+var serviceAccount = require("./fir-advance-project-sdk.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
 
 
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   const firebaseToken = req.headers?.authorization;
   if(!firebaseToken || !firebaseToken.startsWith('Bearer ')) {
     return res.status(401).send({message: "Unauthorized access"})
   }
   const token = firebaseToken.split(' ')[1]
-  console.log(token)
-  next()
+  // console.log(token)
+  try {
+    const decoded = await admin.auth().verifyIdToken(token)
+    req.decoded = decoded
+    next()
+  }
+  catch (error) {
+    res.status(401).send({message: "Unauthorized access"})
+  }
+
 }
 
 
@@ -106,6 +114,11 @@ async function run() {
 
     app.get('/my-submitted-assignments', verifyToken, async (req, res) => {
       const email = req.query.email;
+
+      if(req.decoded.email !== email) {
+        return res.status(403).send({message: "Access forbidden"})
+      }
+
       const query = {email: email}
       const result = await submittedAssignmentsCollection.find(query).toArray()
       // console.log(result)
