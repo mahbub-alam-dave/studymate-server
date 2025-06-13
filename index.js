@@ -63,7 +63,7 @@ async function run() {
       res.send(allAssignments)
     })
 
-    app.get('/assignments/:id', async (req, res) => {
+    app.get('/assignments/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
       const result = await assignmentsCollection.findOne(query)
@@ -135,7 +135,7 @@ async function run() {
     })
 
 
-    app.get('/pending-assignments', async(req, res) => {
+    app.get('/pending-assignments', verifyToken, async(req, res) => {
       const query = {status: "pending"}
       const result = await submittedAssignmentsCollection.find(query).toArray()
       // console.log(result)
