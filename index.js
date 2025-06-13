@@ -11,7 +11,7 @@ app.use(express.json());
 
 
 var admin = require("firebase-admin");
-var serviceAccount = require("fir-advance-project-firebase-adminsdk.json");
+var serviceAccount = require("fir-advance-project-sdk.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
