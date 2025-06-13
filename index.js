@@ -10,6 +10,14 @@ app.use(cors())
 app.use(express.json());
 
 
+var admin = require("firebase-admin");
+var serviceAccount = require("fir-advance-project-firebase-adminsdk.json");
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
+
+
+
 const verifyToken = (req, res, next) => {
   const firebaseToken = req.headers?.authorization;
   if(!firebaseToken || !firebaseToken.startsWith('Bearer ')) {
