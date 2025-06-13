@@ -10,6 +10,17 @@ app.use(cors())
 app.use(express.json());
 
 
+const verifyToken = (req, res, next) => {
+  const firebaseToken = req.headers?.authorization;
+  if(!firebaseToken || !firebaseToken.startsWith('Bearer ')) {
+    return res.status(401).send({message: "Unauthorized access"})
+  }
+  const token = firebaseToken.split(' ')[1]
+  console.log(token)
+  next()
+}
+
+
 
 const uri = `mongodb+srv://${process.env.DB_CAREER_CODE_USER}:${process.env.DB_CAREER_CODE_PASS}@mydatabase.sr7puaa.mongodb.net/?retryWrites=true&w=majority&appName=MyDatabase`;
 
@@ -85,7 +96,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/my-submitted-assignments', async (req, res) => {
+    app.get('/my-submitted-assignments', verifyToken, async (req, res) => {
       const email = req.query.email;
       const query = {email: email}
       const result = await submittedAssignmentsCollection.find(query).toArray()
