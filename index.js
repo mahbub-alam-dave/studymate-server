@@ -65,6 +65,7 @@ async function run() {
 
     app.get('/assignments/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
+
       const query = {_id: new ObjectId(id)}
       const result = await assignmentsCollection.findOne(query)
       res.send(result)
@@ -77,7 +78,7 @@ async function run() {
       res.send(result)
     })
 
-    app.patch('/assignments/:id', async (req, res) => {
+    app.patch('/assignments/:id', verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = {_id: new ObjectId(id)}
       const assignmentInfo = req.body;
