@@ -1,6 +1,7 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
+// const { ObjectId } = require("mongodb");
 require("dotenv").config();
 
 const app = express();
@@ -53,13 +54,15 @@ async function run() {
       .db("StudyMate")
       .collection("submittedAssignments");
 
+    const bookmarksCollection = client.db("StudyMate").collection("bookmarkedAssignments")
+
     app.get("/assignments", async (req, res) => {
       const query = { isDeleted: false };
       const allAssignments = await assignmentsCollection.find(query).toArray();
       res.send(allAssignments);
     });
 
-    app.get("/assignments/search", verifyToken, async (req, res) => {
+    app.get("/assignment-search", async (req, res) => {
       const searchQuery = req.query.searchQuery;
 
       try {
@@ -112,6 +115,7 @@ async function run() {
           level: assignmentInfo.level,
           dueDate: assignmentInfo.dueDate,
           description: assignmentInfo.description,
+          imageUrl: assignmentInfo.imageUrl
         },
       };
       const result = await assignmentsCollection.updateOne(
@@ -193,6 +197,61 @@ async function run() {
       );
       res.send(result);
     });
+
+
+    app.post("/bookmarks", verifyToken, async (req, res) => {
+  const { assignmentId } = req.body;
+  console.log(assignmentId, req.decoded.email)
+  const userEmail = req.decoded.email;
+
+  const existing = await bookmarksCollection.findOne({ assignmentId, userEmail });
+  if (existing) {
+    return res.status(400).send({ message: "Already bookmarked" });
+  }
+
+  const result = await bookmarksCollection.insertOne({
+    userEmail,
+    assignmentId,
+    bookmarkedAt: new Date()
+  });
+
+  res.send(result);
+  
+});
+
+
+app.get("/my-bookmarks", verifyToken, async (req, res) => {
+  const userEmail = req.decoded.email;
+
+  const bookmarks = await bookmarksCollection.find({ userEmail }).toArray();
+
+  // optionally, lookup full assignment details
+  const assignmentIds = bookmarks.map(b => new ObjectId(b.assignmentId));
+  const assignments = await assignmentsCollection.find({ _id: { $in: assignmentIds }, isDeleted: false }).toArray();
+
+  res.send(assignments);
+});
+
+app.delete("/bookmarks/:assignmentId", verifyToken, async (req, res) => {
+  const { assignmentId } = req.params;
+  const userEmail = req.decoded.email;
+
+  try {
+    const result = await bookmarksCollection.deleteOne({
+      assignmentId: assignmentId,
+      userEmail: userEmail,
+    });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ message: "Bookmark not found" });
+    }
+
+    res.send({ message: "Bookmark removed successfully" });
+  } catch (error) {
+    console.error("Remove bookmark error:", error);
+    res.status(500).send({ message: "Failed to remove bookmark" });
+  }
+});
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });

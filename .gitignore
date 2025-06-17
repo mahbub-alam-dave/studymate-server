@@ -2,3 +2,4 @@ node_modules
 .env
 fir-advance-project-sdk.json
 fir-advance-project-firebase-adminsdk.json
+.vercel

@@ -9,6 +9,6 @@ The Study Mate is online study related web application for students. The applica
 
 
 ## Live Url and Github Repositories
-Client Side Repositories: https://github.com/Programming-Hero-Web-Course4/b11a11-client-side-mahbub-alam-dave
-Server Side Repositories: https://github.com/Programming-Hero-Web-Course4/b11a11-server-side-mahbub-alam-dave
-Live Url:
+- Client Side Repositories: https://github.com/Programming-Hero-Web-Course4/b11a11-client-side-mahbub-alam-dave
+- Server Side Repositories: https://github.com/Programming-Hero-Web-Course4/b11a11-server-side-mahbub-alam-dave
+- Live Url: https://fir-advance-project.web.app/
