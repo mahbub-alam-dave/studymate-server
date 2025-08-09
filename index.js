@@ -62,7 +62,68 @@ async function run() {
       res.send(allAssignments);
     });
 
-    app.get("/assignment-search", async (req, res) => {
+
+app.get("/assignments", async (req, res) => {
+  try {
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.max(1, parseInt(req.query.limit) || 5);
+    const difficulty = req.query.difficulty || "All";
+    const skip = (page - 1) * limit;
+
+    let query = {};
+    if (difficulty !== "All") {
+      query.level = difficulty;
+    }
+
+    const assignments = await assignmentsCollection
+      .find(query)
+      .skip(skip)
+      .limit(limit)
+      .toArray();
+
+    const total = await assignmentsCollection.countDocuments(query);
+
+    res.json({ assignments, total });
+  } catch (err) {
+    console.error("Error in /assignments:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+app.get("/assignment-search", async (req, res) => {
+  try {
+    const { searchQuery, page = 1, limit = 5, difficulty = "All" } = req.query;
+    const parsedPage = Math.max(1, parseInt(page) || 1);
+    const parsedLimit = Math.max(1, parseInt(limit) || 5);
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    let query = {};
+    if (searchQuery) {
+      query.$or = [
+        { title: { $regex: searchQuery, $options: "i" } },
+        { description: { $regex: searchQuery, $options: "i" } },
+      ];
+    }
+    if (difficulty !== "All") {
+      query.level = difficulty;
+    }
+
+    const assignments = await assignmentsCollection
+      .find(query)
+      .skip(skip)
+      .limit(parsedLimit)
+      .toArray();
+
+    const total = await assignmentsCollection.countDocuments(query);
+
+    res.json({ assignments, total });
+  } catch (err) {
+    console.error("Error in /assignment-search:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/*     app.get("/assignment-search", async (req, res) => {
       const searchQuery = req.query.searchQuery;
 
       try {
@@ -76,7 +137,7 @@ async function run() {
       } catch (error) {
         res.status(500).send({ message: "Failed to fetch assignments", error });
       }
-    });
+    }); */
 
     app.get("/assignments/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
