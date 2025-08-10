@@ -55,6 +55,7 @@ async function run() {
       .collection("submittedAssignments");
 
     const bookmarksCollection = client.db("StudyMate").collection("bookmarkedAssignments")
+    const usersCollection = client.db("StudyMate").collection("users")
 
     app.get("/assignments", async (req, res) => {
       const query = { isDeleted: false };
@@ -139,6 +140,30 @@ app.get("/assignment-search", async (req, res) => {
       }
     }); */
 
+  app.post("/users", async (req, res) => {
+  try {
+    const user = req.body;
+    console.log(user)
+    if (!user?.email) {
+      return res.status(400).send({ message: "Email is required" });
+    }
+
+    // Check if user already exists
+    const existingUser = await usersCollection.findOne({ email: user.email });
+    if (existingUser) {
+      return res.status(200).send({ message: "User already exists", user: existingUser });
+    }
+
+    // If not found, insert new user
+    const result = await usersCollection.insertOne(user);
+    res.status(201).send({ message: "User created successfully", insertedId: result.insertedId });
+
+  } catch (err) {
+    console.error("Error saving user:", err);
+    res.status(500).send({ message: "Internal server error" });
+  }
+});
+    
     app.get("/assignments/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
