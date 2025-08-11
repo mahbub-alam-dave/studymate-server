@@ -57,41 +57,84 @@ async function run() {
     const bookmarksCollection = client.db("StudyMate").collection("bookmarkedAssignments")
     const usersCollection = client.db("StudyMate").collection("users")
 
-    app.get("/assignments", async (req, res) => {
+/*     app.get("/assignments", async (req, res) => {
       const query = { isDeleted: false };
       const allAssignments = await assignmentsCollection.find(query).toArray();
       res.send(allAssignments);
-    });
+    }); */
 
+
+/* app.get("/assignments", async (req, res) => {
+    try {
+      const { category, searchQuery } = req.query;
+
+      const filter = {};
+      filter.isDeleted = false
+
+      // Filter by category if provided
+      if (category && category.trim() !== "" && category !== "All") {
+
+        filter.level = category;
+      }
+
+      // Search by title or description if provided
+      if (searchQuery && searchQuery.trim() !== "") {
+        filter.$or = [
+          { title: { $regex: searchQuery, $options: "i" } },
+          { description: { $regex: searchQuery, $options: "i" } }
+        ];
+      }
+
+      const assignments = await assignmentsCollection.find(filter).toArray();
+
+      res.json(assignments);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  }); */
 
 app.get("/assignments", async (req, res) => {
   try {
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const limit = Math.max(1, parseInt(req.query.limit) || 5);
-    const difficulty = req.query.difficulty || "All";
-    const skip = (page - 1) * limit;
+    let { page = 1, limit = 5, category, searchQuery } = req.query;
 
-    let query = {};
-    if (difficulty !== "All") {
-      query.level = difficulty;
+    page = parseInt(page);
+    limit = parseInt(limit);
+
+    const filter = {};
+
+    // Category filter
+    if (category && category.trim() !== "" && category !== "All") {
+      filter.level = category;
     }
 
-    const assignments = await assignmentsCollection
-      .find(query)
-      .skip(skip)
+    // Search filter
+    if (searchQuery && searchQuery.trim() !== "") {
+      filter.title = { $regex: searchQuery, $options: "i" };
+    }
+
+    // Count total for pagination
+    const totalAssignments = await assignmentsCollection.countDocuments(filter);
+
+    // Fetch paginated data
+    const assignments = await assignmentsCollection.find(filter)
+      .skip((page - 1) * limit)
       .limit(limit)
-      .toArray();
+      .sort({ createdAt: -1 }).toArray();
 
-    const total = await assignmentsCollection.countDocuments(query);
-
-    res.json({ assignments, total });
+    res.json({
+      assignments,
+      totalPages: Math.ceil(totalAssignments / limit),
+      currentPage: page,
+      totalAssignments,
+    });
   } catch (err) {
-    console.error("Error in /assignments:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error(err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-app.get("/assignment-search", async (req, res) => {
+/* app.get("/assignment-search", async (req, res) => {
   try {
     const { searchQuery, page = 1, limit = 5, difficulty = "All" } = req.query;
     const parsedPage = Math.max(1, parseInt(page) || 1);
@@ -122,7 +165,7 @@ app.get("/assignment-search", async (req, res) => {
     console.error("Error in /assignment-search:", err);
     res.status(500).json({ message: "Server error" });
   }
-});
+}); */
 
 /*     app.get("/assignment-search", async (req, res) => {
       const searchQuery = req.query.searchQuery;
