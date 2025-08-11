@@ -22,7 +22,6 @@ const verifyToken = async (req, res, next) => {
     return res.status(401).send({ message: "Unauthorized access" });
   }
   const token = firebaseToken.split(" ")[1];
-  // console.log(token)
   try {
     const decoded = await admin.auth().verifyIdToken(token);
     req.decoded = decoded;
@@ -186,7 +185,6 @@ app.get("/assignments", async (req, res) => {
   app.post("/users", async (req, res) => {
   try {
     const user = req.body;
-    console.log(user)
     if (!user?.email) {
       return res.status(400).send({ message: "Email is required" });
     }
@@ -221,14 +219,11 @@ app.get("/assignments", async (req, res) => {
       res.send(result)
     }) */
 
-    app.patch("/assignments/:id/delete", async (req, res) => {
+    app.delete("/assignments/:id/delete", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
-      const deletedAssignment = { $set: { isDeleted: true } };
-      const result = await assignmentsCollection.updateOne(
-        query,
-        deletedAssignment
-      );
+      // const deletedAssignment = { $set: { isDeleted: true } };
+      const result = await assignmentsCollection.deleteOne(query);
       res.send(result);
     });
 
@@ -330,7 +325,6 @@ app.get("/assignments", async (req, res) => {
 
     app.post("/bookmarks", verifyToken, async (req, res) => {
   const { assignmentId } = req.body;
-  console.log(assignmentId, req.decoded.email)
   const userEmail = req.decoded.email;
 
   const existing = await bookmarksCollection.findOne({ assignmentId, userEmail });
@@ -348,15 +342,28 @@ app.get("/assignments", async (req, res) => {
   
 });
 
+app.get("/my-created-assignments", verifyToken, async (req, res) => {
+  // const userEmail = req.decoded.email;
+  const email = req.query.email;
+
+  const myAssignments = await assignmentsCollection.find({ email }).toArray();
+
+  // optionally, lookup full assignment details
+  // const assignmentIds = bookmarks.map(b => new ObjectId(b.assignmentId));
+  // const assignments = await assignmentsCollection.find({ _id: { $in: assignmentIds } }).toArray();
+
+  res.send(myAssignments);
+});
 
 app.get("/my-bookmarks", verifyToken, async (req, res) => {
-  const userEmail = req.decoded.email;
+  // const userEmail = req.decoded.email;
+  const userEmail = req.query.email;
 
   const bookmarks = await bookmarksCollection.find({ userEmail }).toArray();
 
   // optionally, lookup full assignment details
   const assignmentIds = bookmarks.map(b => new ObjectId(b.assignmentId));
-  const assignments = await assignmentsCollection.find({ _id: { $in: assignmentIds }, isDeleted: false }).toArray();
+  const assignments = await assignmentsCollection.find({ _id: { $in: assignmentIds } }).toArray();
 
   res.send(assignments);
 });
