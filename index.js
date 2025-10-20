@@ -8,6 +8,7 @@ const usersRoutes = require("./routes/users.routes");
 const assignmentsRoutes = require("./routes/assignments.routes");
 const submissionsRoutes = require("./routes/submissions.routes");
 const bookmarksRoutes = require("./routes/bookmarks.routes"); 
+const tutorRoutes = require("./routes/tutors.routes"); 
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -21,6 +22,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/assignments", assignmentsRoutes);
 app.use("/api/submissions", submissionsRoutes); 
 app.use("/api/bookmarks", bookmarksRoutes); 
+app.use("/api/tutors", tutorRoutes); 
 
 // Root endpoint
 app.get("/", (req, res) => {
