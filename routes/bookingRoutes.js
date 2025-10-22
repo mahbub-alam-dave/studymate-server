@@ -139,7 +139,7 @@ router.post('/bookings/create', async (req, res) => {
   }
 });
 
-
+// payment success callback
 router.post('/payment/success', async (req, res) => {
   try {
     const { tran_id, val_id, amount, card_type } = req.body;
@@ -206,7 +206,29 @@ router.post('/payment/success', async (req, res) => {
   }
 });
 
+// 3. PAYMENT FAIL CALLBACK
+router.post('/payment/fail', async (req, res) => {
+  try {
+    const { tran_id } = req.body;
 
+    // Update booking status
+    await bookingsCollection.updateOne(
+      { transactionId: tran_id },
+      {
+        $set: {
+          paymentStatus: 'failed',
+          bookingStatus: 'cancelled',
+          updatedAt: new Date(),
+        }
+      }
+    );
+
+    res.redirect(`${process.env.FRONTEND_URL}/payment/failed`);
+  } catch (error) {
+    console.error('Payment fail error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/payment/error`);
+  }
+});
 
 
 
