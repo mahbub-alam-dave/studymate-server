@@ -253,7 +253,34 @@ router.post('/payment/cancel', async (req, res) => {
   }
 });
 
+// 5. GET BOOKING DETAILS
+router.get('/bookings/:bookingId', async (req, res) => {
+  try {
+    const { bookingId } = req.params;
 
+    const booking = await bookingsCollection.findOne({
+      _id: new ObjectId(bookingId)
+    });
+
+    if (!booking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      booking
+    });
+  } catch (error) {
+    console.error('Get booking error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+});
 
 
 
