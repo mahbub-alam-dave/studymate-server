@@ -138,3 +138,85 @@ router.post('/bookings/create', async (req, res) => {
     });
   }
 });
+
+
+router.post('/payment/success', async (req, res) => {
+  try {
+    const { tran_id, val_id, amount, card_type } = req.body;
+
+
+    // Validate payment with SSLCommerz
+    const sslcz = new SSLCommerzPayment(store_id, store_passwd, is_live);
+    const validation = await sslcz.validate({ val_id });
+
+    if (validation.status === 'VALID' || validation.status === 'VALIDATED') {
+      // Find booking by transaction ID
+      const booking = await bookingsCollection.findOne({ 
+        transactionId: tran_id 
+      });
+
+      if (!booking) {
+        return res.redirect(`${process.env.FRONTEND_URL}/payment/error`);
+      }
+
+      // Update booking status
+      await bookingsCollection.updateOne(
+        { _id: booking._id },
+        {
+          $set: {
+            paymentStatus: 'paid',
+            bookingStatus: 'confirmed',
+            paymentDetails: {
+              validationId: val_id,
+              cardType: card_type,
+              paidAmount: parseFloat(amount),
+              paidAt: new Date(),
+            },
+            updatedAt: new Date(),
+          }
+        }
+      );
+
+      // Update tutor's slot booking count (for batch sessions)
+      if (booking.sessionType === 'batch') {
+        await usersCollection.updateOne(
+          { 
+            _id: booking.tutorId,
+            'sessions.batch.slots.id': booking.slotInfo.id
+          },
+          {
+            $inc: { 'sessions.batch.slots.$.bookedCount': 1 }
+          }
+        );
+      }
+
+      // Send confirmation email/SMS to student and tutor
+
+      // Redirect to success page
+      return res.redirect(
+        `${process.env.FRONTEND_URL}/payment/success?bookingId=${booking._id}`
+      );
+    } else {
+      return res.redirect(`${process.env.FRONTEND_URL}/payment/error`);
+    }
+
+  } catch (error) {
+    console.error('Payment success error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/payment/error`);
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+module.exports = router;
