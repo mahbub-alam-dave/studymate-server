@@ -230,7 +230,28 @@ router.post('/payment/fail', async (req, res) => {
   }
 });
 
+// 4. PAYMENT CANCEL CALLBACK
+router.post('/payment/cancel', async (req, res) => {
+  try {
+    const { tran_id } = req.body;
 
+    await bookingsCollection.updateOne(
+      { transactionId: tran_id },
+      {
+        $set: {
+          paymentStatus: 'cancelled',
+          bookingStatus: 'cancelled',
+          updatedAt: new Date(),
+        }
+      }
+    );
+
+    res.redirect(`${process.env.FRONTEND_URL}/payment/cancelled`);
+  } catch (error) {
+    console.error('Payment cancel error:', error);
+    res.redirect(`${process.env.FRONTEND_URL}/payment/error`);
+  }
+});
 
 
 
