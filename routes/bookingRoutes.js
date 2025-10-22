@@ -9,6 +9,7 @@ const store_passwd = process.env.SSLCOMMERZ_STORE_PASSWORD;
 const is_live = false; // true for production, false for sandbox
 
 const { client } = require("../db/dbConnect");
+const { calculateBookingPrice } = require('../helpers/calculatePrice');
 const db = client.db("StudyMate");
 const usersCollection = db.collection("users");
 const bookingsCollection = db.collection("bookings");
@@ -28,7 +29,6 @@ router.post('/bookings/create', async (req, res) => {
       estimatedPrice,
     } = req.body;
 
-    const db = req.app.locals.db;
 
     // Fetch tutor details to calculate accurate price
     const tutor = usersCollection.findOne({ 
