@@ -5,47 +5,43 @@ const { client } = require("../db/dbConnect");
 const db = client.db("StudyMate");
 const users = db.collection("users");
 
-router.get('/find-tutors', async (req, res) => {
+router.get("/find-tutors", async (req, res) => {
   try {
     const {
-      search = '',
-      subject = '',
-      experience = '',
+      search = "",
+      subject = "",
+      experience = "",
       minFee = 0,
       maxFee = 100000,
       page = 1,
-      limit = 6
+      limit = 6,
     } = req.query;
 
-        const pageNumber = Math.max(parseInt(page) || 1, 1);
+
+    const pageNumber = Math.max(parseInt(page) || 1, 1);
     const limitNumber = Math.max(parseInt(limit) || 6, 1);
 
+    console.log("Page:", pageNumber, "Limit:", limitNumber, "Skip:", (pageNumber - 1) * limitNumber);
+
+
     // Build aggregation pipeline
-    const pipeline = [
-      { $match: { role: 'tutor' } }
-    ];
+    const pipeline = [{ $match: { role: "tutor" } }];
 
-    pipeline.push({
-  $addFields: {
-    feeNumber: {
-      $convert: { input: "$fee", to: "int", onError: 0, onNull: 0 }
-    }
-  }
-});
-
-
-    // Add experience as number field if stored as string "X years"
+    // Add numeric conversion fields
     pipeline.push({
       $addFields: {
+        feeNumber: {
+          $convert: { input: "$fee", to: "int", onError: 0, onNull: 0 },
+        },
         experienceYears: {
           $convert: {
             input: { $arrayElemAt: [{ $split: ["$experience", " "] }, 0] },
             to: "int",
             onError: 0,
-            onNull: 0
-          }
-        }
-      }
+            onNull: 0,
+          },
+        },
+      },
     });
 
     // Build match conditions
@@ -54,42 +50,42 @@ router.get('/find-tutors', async (req, res) => {
     // Search filter
     if (search) {
       matchConditions.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        // { expertise: { $in: [new RegExp(search, 'i')] } },
-         { expertise: { $elemMatch: { $regex: search, $options: 'i' } } },
-        { qualification: { $regex: search, $options: 'i' } }
+        { name: { $regex: search, $options: "i" } },
+        { expertise: { $elemMatch: { $regex: search, $options: "i" } } },
+        { qualification: { $regex: search, $options: "i" } },
       ];
     }
 
     // Subject filter
     if (subject) {
-  matchConditions.expertise = { $in: [subject] };
-}
+      matchConditions.expertise = { $in: [subject] };
+    }
 
     // Experience filter
     if (experience) {
-      if (experience === '0-2') {
+      if (experience === "0-2") {
         matchConditions.experienceYears = { $lte: 2 };
-      } else if (experience === '3-5') {
+      } else if (experience === "3-5") {
         matchConditions.experienceYears = { $gte: 3, $lte: 5 };
-      } else if (experience === '6-10') {
+      } else if (experience === "6-10") {
         matchConditions.experienceYears = { $gte: 6, $lte: 10 };
-      } else if (experience === '10+') {
+      } else if (experience === "10+") {
         matchConditions.experienceYears = { $gt: 10 };
       }
     }
 
     // Fee filter
-   matchConditions.feeNumber = {
-  $gte: parseInt(minFee),
-  $lte: parseInt(maxFee)
-};
+    matchConditions.feeNumber = {
+      $gte: parseInt(minFee),
+      $lte: parseInt(maxFee),
+    };
 
+    // Apply filters
     pipeline.push({ $match: matchConditions });
 
     // Add pagination
-    pipeline.push({ $skip: (parseInt(pageNumber) - 1) * parseInt(limitNumber) });
-    pipeline.push({ $limit: parseInt(limitNumber) });
+    pipeline.push({ $skip: (pageNumber - 1) * limitNumber });
+    pipeline.push({ $limit: limitNumber });
 
     // Remove password field
     pipeline.push({ $project: { password: 0 } });
@@ -97,30 +93,33 @@ router.get('/find-tutors', async (req, res) => {
     // Execute aggregation
     const tutors = await users.aggregate(pipeline).toArray();
 
-    console.log(tutors)
+    // Count pipeline (fix: add both fields + clone matchConditions)
+    const countMatch = JSON.parse(JSON.stringify(matchConditions));
 
-    // Get total count
     const countPipeline = [
-      { $match: { role: 'tutor' } },
+      { $match: { role: "tutor" } },
       {
         $addFields: {
+          feeNumber: {
+            $convert: { input: "$fee", to: "int", onError: 0, onNull: 0 },
+          },
           experienceYears: {
             $convert: {
               input: { $arrayElemAt: [{ $split: ["$experience", " "] }, 0] },
               to: "int",
               onError: 0,
-              onNull: 0
-            }
-          }
-        }
+              onNull: 0,
+            },
+          },
+        },
       },
-      { $match: matchConditions },
-      { $count: "total" }
+      { $match: countMatch },
+      { $count: "total" },
     ];
 
     const countResult = await users.aggregate(countPipeline).toArray();
-    const totalTutors = countResult.length > 0 ? countResult[0].total : 0;
-    const totalPages = Math.ceil(totalTutors / parseInt(limit));
+    const totalTutors = countResult[0]?.total || 0;
+    const totalPages = Math.ceil(totalTutors / limitNumber);
 
     res.status(200).json({
       success: true,
@@ -131,20 +130,18 @@ router.get('/find-tutors', async (req, res) => {
         totalTutors,
         limit: limitNumber,
         hasNextPage: pageNumber < totalPages,
-        hasPrevPage: pageNumber > 1
-      }
+        hasPrevPage: pageNumber > 1,
+      },
     });
-
-
-
   } catch (error) {
-    console.error('Error fetching tutors:', error);
+    console.error("Error fetching tutors:", error);
     res.status(500).json({
       success: false,
-      message: 'Error fetching tutors',
-      error: error.message
+      message: "Error fetching tutors",
+      error: error.message,
     });
   }
 });
+
 
 module.exports = router;

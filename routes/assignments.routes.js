@@ -22,7 +22,6 @@ router.post("/", async (req, res) => {
 // My created assignments
 router.get("/my-created-assignments", async (req, res) => {
   const email = req.query.email;
-  console.log(email)
   const result = await assignmentsCollection.find({ email }).toArray();
   if(!result) {
     return res.status(400).send({message: "You don't have any assignments"})
