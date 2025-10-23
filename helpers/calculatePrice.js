@@ -1,4 +1,4 @@
-export function calculateBookingPrice(tutor, sessionType, duration) {
+function calculateBookingPrice(tutor, sessionType, duration) {
   const sessionConfig = tutor.sessions[sessionType];
   const basePrice = sessionConfig.fee;
 
