@@ -27,20 +27,10 @@ const io = new Server(server, {
   },
 });
 
-// ✅ Socket.IO Connection
-io.on("connection", (socket) => {
-  console.log("🟢 New client connected:", socket.id);
 
-  // Example: simple message event
-  socket.on("send_message", (data) => {
-    console.log("📩 Received message:", data);
-    io.emit("receive_message", data); // broadcast to all clients
-  });
-
-  socket.on("disconnect", () => {
-    console.log("🔴 Client disconnected:", socket.id);
-  });
-});
+const setupSocketHandlers = require('./socket/socketHandler');
+// setupSocketHandlers(io, db);
+setupSocketHandlers(io);
 
 // Middleware
 // app.use(cors());
