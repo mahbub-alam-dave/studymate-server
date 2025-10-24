@@ -13,6 +13,9 @@ const tutorRoutes = require("./routes/tutors.routes");
 const bookingRoutes = require("./routes/bookingRoutes"); 
 const { Server } = require("socket.io");
 
+const messageRoutes = require('./routes/messageRoutes');
+const conversationRoutes = require('./routes/conversationRoutes');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -27,6 +30,20 @@ const io = new Server(server, {
   },
 });
 
+/* // ✅ Socket.IO Connection
+io.on("connection", (socket) => {
+  console.log("🟢 New client connected:", socket.id);
+
+  // Example: simple message event
+  socket.on("send_message", (data) => {
+    console.log("📩 Received message:", data);
+    io.emit("receive_message", data); // broadcast to all clients
+  });
+
+  socket.on("disconnect", () => {
+    console.log("🔴 Client disconnected:", socket.id);
+  });
+}); */
 
 const setupSocketHandlers = require('./socket/socketHandler');
 // setupSocketHandlers(io, db);
@@ -51,13 +68,23 @@ app.use("/api/bookmarks", bookmarksRoutes);
 app.use("/api/tutors", tutorRoutes); 
 app.use("/api", bookingRoutes); 
 
+
+    
+app.use('/api/messages', messageRoutes);
+app.use('/api/conversations', conversationRoutes);
+
 // Root endpoint
 app.get("/", (req, res) => {
   res.send("🎓 EduCommunity API is running...");
 });
 
+/* server.listen(3000, () => {
+  console.log('Socket server Server running on port 3000');
+}); */
+
 // Start server
-app.listen(port, async () => {
-  await dbConnect(); // connect only once, handled internally
+server.listen(port, async () => {
+  await dbConnect();
   console.log(`🚀 Server running on port ${port}`);
+  console.log(`✅ Socket.IO ready on port ${port}`);
 });
