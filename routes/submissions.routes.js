@@ -1,7 +1,7 @@
 const express = require("express");
 const { ObjectId } = require("mongodb");
 const { dbConnect } = require("../db/dbConnect");
-const verifyToken = require("../middlewares/verifyToken");
+// const verifyToken = require("../middlewares/verifyToken");
 
 const router = express.Router();
 
