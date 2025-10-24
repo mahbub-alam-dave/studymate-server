@@ -5,6 +5,9 @@ require("dotenv").config();
 
 const { dbConnect } = require("./db/dbConnect");
 
+// console.log(process.env.FIREBASE_SERVICE_ACCOUNT)
+
+
 const usersRoutes = require("./routes/users.routes");
 const assignmentsRoutes = require("./routes/assignments.routes");
 const submissionsRoutes = require("./routes/submissions.routes");

@@ -1,6 +1,10 @@
 // middlewares/verifyToken.js
-const admin = require("firebase-admin");
-const serviceAccount = require(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
+const admin = require('firebase-admin');
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+
+// Replace escaped newlines with actual newlines
+serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
